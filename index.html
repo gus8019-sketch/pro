@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Michi 道</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Concepto: app móvil de una sola columna. Camino en zigzag con estaciones-kanji, papel crema, índigo y rojo torii. */
+:root{
+  --bg:#F5F0E3; --surface:#FFFDF8; --fg:#262626; --muted:#6B665B;
+  --indigo:#2B3A67; --indigo-fg:#FFFFFF; --red:#C8322C; --gold:#D9A441; --gold-soft:#FBF0D3;
+  --sand:#E2C9A6; --lock:#C9C4B8; --line:#D9D2C1; --green:#4F7A45; --green-soft:#E3EDD9;
+  --sky:#DDE5F2; --grass:#B8C5A8; --warn:#8A5A00;
+  --display:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Noto Sans JP',system-ui,sans-serif;
+  --body:'Nunito Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16192B; --surface:#1F2440; --fg:#EFEBDD; --muted:#A9A89F;
+  --indigo:#0F1325; --indigo-fg:#F5F0E3; --red:#E5534B; --gold:#E3B352; --gold-soft:#3A3220;
+  --sand:#5B4B38; --lock:#4A4C5E; --line:#343A5C; --green:#8DB880; --green-soft:#24362A; --warn:#E3B352; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16192B; --surface:#1F2440; --fg:#EFEBDD; --muted:#A9A89F;
+  --indigo:#0F1325; --indigo-fg:#F5F0E3; --red:#E5534B; --gold:#E3B352; --gold-soft:#3A3220;
+  --sand:#5B4B38; --lock:#4A4C5E; --line:#343A5C; --green:#8DB880; --green-soft:#24362A; --warn:#E3B352; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.bar{background:var(--indigo);color:var(--indigo-fg);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:14px max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--indigo);z-index:10}
+.bar h2{font-size:1.15rem;font-weight:700}
+.bar .r{font-family:var(--display);font-size:1.5rem;font-weight:700;line-height:1}
+.bar .prog{font-size:.9rem;opacity:.8}
+.back{background:none;border:0;color:inherit;font-size:1.4rem;padding:4px 8px 4px 0;line-height:1}
+main{flex:1;display:flex;flex-direction:column;gap:16px;padding-block:18px 28px}
+
+/* cover */
+.cover{text-align:center;align-items:center;justify-content:center;gap:20px;padding-top:36px}
+.cover .big{font-family:var(--display);font-weight:900;font-size:7rem;line-height:1;color:var(--red)}
+.cover h1{font-size:2.3rem;color:var(--indigo)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cover h1{color:var(--fg)}}
+:root[data-theme="dark"] .cover h1{color:var(--fg)}
+.cover p{margin:0;color:var(--muted);max-width:34ch}
+.torii{width:min(260px,70%)}
+
+.btn{border:0;border-radius:999px;padding:14px 22px;font-family:var(--display);font-weight:700;font-size:1.05rem;min-height:48px}
+.btn.primary{background:var(--red);color:#fff}
+.btn.ghost{background:var(--line);color:var(--fg)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px}.row>*{flex:1}
+
+/* map */
+.path{position:relative;display:flex;flex-direction:column;gap:0}
+.node{display:flex;align-items:center;gap:14px;border:0;background:none;text-align:left;padding:0;position:relative;min-height:108px;width:100%}
+.node.right{flex-direction:row-reverse;text-align:right}
+.node .disc{flex:none;width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:2.3rem;
+  color:#fff;background:var(--lock);border:4px solid var(--surface);position:relative;z-index:1}
+.node .num{position:absolute;top:-6px;left:-6px;width:26px;height:26px;border-radius:50%;background:var(--indigo);color:var(--indigo-fg);font-size:.8rem;display:grid;place-items:center;font-family:var(--body);font-weight:700;border:2px solid var(--surface)}
+.node.right .num{left:auto;right:-6px}
+.node.open .disc{background:var(--red)}
+.node.done .disc{background:var(--green)}
+.node .t{font-family:var(--display);font-weight:700;font-size:1.15rem}
+.node .s{font-size:.9rem;color:var(--muted)}
+.node.open .s{color:var(--red);font-weight:700}
+.node.done .s{color:var(--green);font-weight:700}
+.node.locked{cursor:not-allowed}.node.locked .t{color:var(--muted)}
+.node:not(.locked):active .disc{transform:scale(.96)}
+.trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+/* scene */
+.scene{border-radius:20px;overflow:hidden;line-height:0;background:var(--sky)}
+.scene svg{width:100%;height:auto}
+.title h1{font-size:1.7rem;color:var(--indigo)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .title h1{color:var(--fg)}}
+:root[data-theme="dark"] .title h1{color:var(--fg)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:2px solid var(--indigo);color:var(--indigo);border-radius:999px;padding:2px 12px;font-weight:700;font-size:.85rem;background:transparent}
+.chip.red{border-color:var(--red);color:var(--red)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip{border-color:var(--gold);color:var(--gold)}}
+:root[data-theme="dark"] .chip{border-color:var(--gold);color:var(--gold)}
+.story{margin:0;font-size:1.08rem}
+.listen{align-self:flex-start;display:inline-flex;gap:8px;align-items:center;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:700}
+.listen[aria-pressed="true"]{border-color:var(--red);color:var(--red)}
+.fuente{border:2px solid var(--gold);background:var(--gold-soft);border-radius:16px;padding:8px 14px;font-size:.88rem;font-weight:700;color:var(--fg);text-align:center}
+.steps{display:flex;gap:6px}.steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}.steps i.on{background:var(--red)}
+
+/* challenge card */
+.card{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.reto{align-self:flex-start;background:var(--red);color:#fff;border-radius:999px;padding:2px 14px;font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.08em}
+.card h3{font-size:1.2rem;color:var(--indigo)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card h3{color:var(--fg)}}
+:root[data-theme="dark"] .card h3{color:var(--fg)}
+.hint{margin:0;font-size:.92rem;color:var(--muted)}
+.fb{margin:0;font-weight:700;min-height:1.5em}
+.fb.ok{color:var(--green)}.fb.no{color:var(--red)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-weight:700;min-height:44px}
+.opt:hover{border-color:var(--indigo)}
+.opt.good{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.opt.bad{border-color:var(--red);color:var(--red)}
+.opt.sel{border-color:var(--indigo);background:var(--indigo);color:var(--indigo-fg)}
+.opt.placed{opacity:.35;pointer-events:none}
+.drag{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;position:relative;z-index:3}
+.drag.dragging{cursor:grabbing;z-index:20;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}*{transition:none!important}}
+
+.zone{border:3px dashed var(--red);border-radius:18px;display:grid;place-items:center;text-align:center;padding:12px;color:var(--muted);font-size:.9rem;min-height:84px;background:transparent}
+.zone.full{border-style:solid;border-color:var(--green);background:var(--green-soft);color:var(--fg)}
+.tray{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+.tray .it{background:var(--surface);border:2px solid var(--green);border-radius:12px;padding:4px 12px;font-weight:700;font-size:.9rem}
+.obi{height:46px;border-radius:8px;background:repeating-linear-gradient(90deg,#fff 0 28px,#e6e0d0 28px 30px);border:3px solid #b9b2a0;width:150px;display:grid;place-items:center;color:#6b665b;font-weight:700;font-size:.8rem}
+.stage1{display:flex;align-items:center;justify-content:space-around;gap:10px;flex-wrap:wrap}
+.belly{width:120px;height:120px;border-radius:50%;border:3px dashed var(--red);display:grid;place-items:center;background:#F6D9E3;color:#7a3b52;text-align:center;font-size:.8rem;font-weight:700}
+.belly.full{border-style:solid;border-color:var(--green)}
+.ord{display:flex;flex-direction:column;gap:8px}
+.ord button{display:flex;gap:12px;align-items:center;text-align:left;border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:10px 14px;min-height:56px}
+.ord .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-weight:700}
+.ord button.got{border-color:var(--green);background:var(--green-soft)}
+.ord button.got .n{background:var(--green);color:#fff}
+.kids{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kid{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;font-size:.85rem}
+.kid.sel{border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo)}
+.kid.done{border-color:var(--green);background:var(--green-soft)}
+.kid svg{width:64px;height:auto}
+.boxbtn{border:0;background:none;padding:0;display:block;margin-inline:auto}
+.boxbtn svg{width:min(220px,70%);display:block;margin:auto}
+
+textarea{width:100%;min-height:110px;border:2px solid var(--line);border-radius:16px;padding:12px;font:inherit;background:var(--surface);color:var(--fg);resize:vertical}
+.cmp{display:grid;gap:10px}
+.cmp .col{border-radius:16px;padding:12px 14px;font-size:.95rem}
+.cmp .jp{background:var(--indigo);color:var(--indigo-fg)}
+.cmp .jp b{display:block;font-family:var(--display);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.mic{align-self:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:700}
+.mic.on{border-color:var(--red);color:var(--red)}
+
+/* close */
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.badge{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.8rem;text-align:center;font-weight:700}
+.badge .d{width:64px;height:64px;border-radius:50%;background:var(--gold);color:#3a2a00;display:grid;place-items:center;font-family:var(--display);font-weight:900;font-size:1.8rem;border:4px solid var(--surface);box-shadow:0 0 0 2px var(--gold)}
+.badge.off .d{background:var(--lock);box-shadow:0 0 0 2px var(--lock);color:#fff}
+details{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px 16px}
+summary{font-family:var(--display);font-weight:700;cursor:pointer}
+.lvl{display:inline-block;border-radius:999px;padding:0 10px;font-size:.75rem;font-weight:700;margin-right:6px;white-space:nowrap}
+.lvl.B{background:var(--green-soft);color:var(--green)}
+.lvl.C{background:var(--gold-soft);color:var(--warn)}
+.lvl.N{background:var(--line);color:var(--fg)}
+.claims{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.legend{display:grid;gap:6px;font-size:.9rem;color:var(--muted);margin:0 0 4px}
+.note{background:var(--surface);border-left:4px solid var(--indigo);padding:8px 12px;border-radius:0 12px 12px 0;font-size:.92rem}
+.small{font-size:.85rem;color:var(--muted)}
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------- Contenido (editable) ---------- */
+/* Niveles de verificación: B = fuente publicada secundaria · C = creencia o interpretación por contrastar · N = no documentado */
+const LEVELS={B:'Nivel B · publicado',C:'Nivel C · por contrastar',N:'No documentado'};
+const ST=[
+{id:1,k:'犬',name:'Esperando',rites:'Inu no Hi y obi-iwai',chips:['5.º mes de embarazo','Inu no Hi · día del perro'],
+ text:'En el quinto mes del embarazo se pide un parto seguro y se coloca una faja de algodón blanca, la iwata-obi, alrededor del vientre. Se hace en un día del perro, un animal asociado a los partos fáciles.',
+ sum:'Fuentes: Nivel B y Nivel C (por contrastar)',
+ retoTitle:'Arrastra la faja al vientre',
+ compare:'¿Hay en tu familia o comunidad algún cuidado o ritual durante el embarazo? Cuéntalo.',
+ compareJp:'En Japón: una faja de algodón, un día del perro y una visita para pedir un parto seguro.',
+ claims:[['B','La faja iwata-obi se coloca en el quinto mes de embarazo.'],['B','Se elige un día del perro (Inu no Hi).'],['C','El perro se asocia a partos fáciles: es una creencia popular.']]},
+{id:2,k:'宮',name:'Bienvenida',rites:'Oshichiya y omiyamairi',chips:['Día 7 · nombre','Cerca del mes · santuario'],
+ text:'El día 7 de vida se celebra la salud del bebé y se le da su nombre: es el oshichiya. Hacia el primer mes, la familia lo presenta en el santuario, en el omiyamairi.',
+ sum:'Fuentes: Nivel B',
+ retoTitle:'Ordena la secuencia de los ritos',
+ compare:'¿Cómo se da la bienvenida a un bebé en tu familia? ¿Cuándo se le pone el nombre y quién lo presenta?',
+ compareJp:'En Japón: el nombre llega al día 7 y la presentación al santuario hacia el primer mes.',
+ claims:[['B','El nombre se otorga en el día 7 (oshichiya).'],['B','La presentación al santuario (omiyamairi) ocurre hacia el primer mes.']]},
+{id:3,k:'食',name:'Primeros 100 días',rites:'Okuizome',chips:['Día 100','Comida simbólica'],
+ text:'En el día 100, la familia prepara una comida simbólica y finge dar de comer al bebé, para que nunca le falte alimento. Es el okuizome.',
+ sum:'Fuentes: Nivel B · detalles del menú Nivel C',
+ retoTitle:'Arma la bandeja del banquete',
+ compare:'¿Cómo se celebra en tu cultura la llegada de la primera comida o el crecimiento del bebé?',
+ compareJp:'En Japón: una comida simbólica a los 100 días, con deseo de que nunca falte alimento.',
+ claims:[['B','El okuizome se hace hacia el día 100 de vida.'],['B','Se finge dar de comer al bebé para desearle que nunca le falte alimento.'],['C','Los platos de la bandeja varían por región y familia. Contrasta el menú.']]},
+{id:4,k:'箱',name:'Memorias',rites:'Conservación del cordón umbilical',chips:['Kotobuki bako','Recuerdo'],
+ text:'Las madres guardan el cordón umbilical en cajas o estuches, como recuerdo del nacimiento. No se documentó un rito equivalente a la ombligada andina, y esta pantalla lo aclara.',
+ sum:'Fuentes: Nivel B · rito equivalente: no documentado',
+ retoTitle:'Abre la caja de recuerdos',
+ compare:'¿Qué objeto de la infancia guarda tu familia? ¿Existe una práctica con el cordón o el ombligo, como la ombligada andina?',
+ compareJp:'En Japón: el cordón se guarda como recuerdo. No se documentó un rito como la ombligada.',
+ claims:[['B','El cordón se guarda en cajas o estuches como recuerdo.'],['N','No se documentó un rito japonés equivalente a la ombligada andina.']]},
+{id:5,k:'髪',name:'Crecer',rites:'Kamioki y shichi-go-san',chips:['3, 5 y 7 años','15 de noviembre'],
+ text:'A los 3 años se dejaba crecer el cabello (kamioki). A los 3, 5 y 7 años se visita el santuario cada 15 de noviembre, en el shichi-go-san. Se regalan caramelos largos, los chitose ame, que simbolizan una vida larga.',
+ sum:'Fuentes: Nivel B',
+ retoTitle:'Viste a cada niño según su edad',
+ compare:'¿Qué edades o momentos marcan el crecimiento en tu familia? ¿Cambia algo la ropa, el corte de cabello o una visita especial?',
+ compareJp:'En Japón: tres edades, un santuario y ropa propia para cada una.',
+ claims:[['B','El shichi-go-san se celebra el 15 de noviembre a los 3, 5 y 7 años.'],['B','El kamioki marca el inicio del cabello largo a los 3 años.'],['C','El significado de cada prenda tiene variantes según la zona.']]},
+{id:6,k:'今',name:'Hoy',rites:'Cambios actuales',chips:['Hoy','Más flexibilidad'],
+ text:'Algunos ritos se mantienen, otros son solo simbólicos y otros han dejado de practicarse. Hoy hay más flexibilidad en la ropa y en las fechas: muchas familias eligen un fin de semana y se hacen fotografías.',
+ sum:'Fuentes: Nivel B · Nivel C (por contrastar)',
+ retoTitle:'Vota qué tradición cambió en tu familia',
+ compare:'Elige una tradición que cambió en tu familia y cuenta por qué cambió.',
+ compareJp:'En Japón: ritos que se mantienen, que se vuelven simbólicos o que se dejan.',
+ claims:[['B','Hay más flexibilidad actual en la ropa y las fechas.'],['C','Qué ritos se mantienen o se dejan depende de cada familia y región.']]}
+];
+const TRAY_OK=['Arroz','Sopa','Pescado (tai)','Encurtidos','Piedra pequeña'];
+const TRAY_BAD=['Pastel de cumpleaños','Refresco'];
+const SEQ=['Nace el bebé','Día 7 · Oshichiya: salud y nombre','Cerca del mes · Omiyamairi: visita al santuario','Día 100 · Okuizome: primera comida simbólica'];
+const AGES=[{a:3,g:'Hifu',d:'Chaleco sobre el kimono',c:'#E8A0B5'},{a:5,g:'Hakama',d:'Pantalón amplio',c:'#6D7FB5'},{a:7,g:'Obi de adulto',d:'Cinturón ancho del kimono',c:'#D9A441'}];
+const VOTES=['La fecha del rito','La ropa','La comida','El lugar de la celebración','Ninguna cambió'];
+
+/* ---------- Estado ---------- */
+const KEY='michi-v1';
+let S={screen:'cover',st:1,step:0,done:[],notes:{},vote:null};
+try{const x=JSON.parse(localStorage.getItem(KEY)||'null');if(x&&Array.isArray(x.done)){S.done=x.done;S.notes=x.notes||{};S.vote=x.vote||null}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({done:S.done,notes:S.notes,vote:S.vote}))}catch(e){}}
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const unlocked=n=>n===1||S.done.includes(n-1);
+
+/* ---------- Voz ---------- */
+let speaking=false;
+function stopSpeak(){try{speechSynthesis.cancel()}catch(e){}speaking=false}
+function speak(t,btn){
+  if(!('speechSynthesis' in window)){btn.textContent='Audio no disponible';return}
+  if(speaking){stopSpeak();btn.setAttribute('aria-pressed','false');btn.firstChild.nodeValue='▶ Escuchar el relato';return}
+  try{const u=new SpeechSynthesisUtterance(t);u.lang='es-ES';u.rate=.95;
+    u.onend=u.onerror=()=>{speaking=false;btn.setAttribute('aria-pressed','false');btn.firstChild.nodeValue='▶ Escuchar el relato'};
+    speaking=true;btn.setAttribute('aria-pressed','true');btn.firstChild.nodeValue='■ Detener';speechSynthesis.speak(u)}catch(e){speaking=false}
+}
+
+/* ---------- Ilustraciones ---------- */
+const person=(x,y,s,body,hair='#1d1d1d',skin='#F1D0B5',extra='')=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M-26 0 L-18 -62 H18 L26 0Z" fill="${body}"/><circle cx="0" cy="-78" r="16" fill="${skin}"/><path d="M-17 -80 a17 17 0 0 1 34 0 q-17 -9 -34 0Z" fill="${hair}"/><circle cx="0" cy="-96" r="8" fill="${hair}"/><circle cx="-5" cy="-77" r="1.6" fill="#333"/><circle cx="5" cy="-77" r="1.6" fill="#333"/>${extra}</g>`;
+const toriiSvg=(x,y,s,c='#C8322C')=>`<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><rect x="-4" y="0" width="9" height="110" /><rect x="76" y="0" width="9" height="110"/><path d="M-16 4 Q40 -6 96 4 L100 -8 Q40 -20 -20 -8Z"/><rect x="8" y="24" width="64" height="8"/><rect x="-6" y="40" width="0" height="0"/></g>`;
+const ground=(c='#B8C5A8')=>`<rect y="150" width="360" height="50" fill="${c}"/>`;
+const SCENE={
+1:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Mujer embarazada con la faja iwata-obi, un torii y un perro"><rect width="360" height="200" fill="#DDE5F2"/><circle cx="318" cy="36" r="16" fill="#F7E7A8"/><circle cx="326" cy="32" r="14" fill="#DDE5F2"/>${ground()}${toriiSvg(150,56,.9)}${person(70,168,1,'#E8A0B5','#1d1d1d','#F1D0B5','<ellipse cx="0" cy="-26" rx="21" ry="16" fill="#F4B6C8"/><rect x="-20" y="-32" width="40" height="13" rx="3" fill="#fff" stroke="#b9b2a0" stroke-width="2"/>')}
+<g transform="translate(290 170)"><ellipse cx="0" cy="-22" rx="34" ry="22" fill="#D9A05B"/><circle cx="26" cy="-46" r="16" fill="#D9A05B"/><path d="M18 -58 l-4 -16 l12 8Z M32 -58 l8 -16 l0 18Z" fill="#B7803F"/><ellipse cx="34" cy="-42" rx="8" ry="6" fill="#F8EAD0"/><circle cx="26" cy="-50" r="2" fill="#222"/><path d="M-32 -26 q-16 -10 -6 -28" stroke="#D9A05B" stroke-width="8" fill="none" stroke-linecap="round"/><rect x="-16" y="-2" width="8" height="12" fill="#B7803F"/><rect x="10" y="-2" width="8" height="12" fill="#B7803F"/></g></svg>`,
+2:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Familia con un bebé frente al santuario"><rect width="360" height="200" fill="#DDE5F2"/>${ground()}${toriiSvg(130,32,1.05)}
+<path d="M20 150 h70 l-35 -40z" fill="#8c6a43"/><rect x="30" y="122" width="50" height="28" fill="#c99b62"/>${person(250,172,1,'#2B3A67','#1d1d1d')}${person(300,172,.92,'#E8A0B5')}<ellipse cx="275" cy="132" rx="14" ry="18" fill="#fff" stroke="#d9d2c1" stroke-width="2"/><circle cx="275" cy="118" r="8" fill="#F1D0B5"/></svg>`,
+3:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Bandeja con la comida del banquete okuizome"><rect width="360" height="200" fill="#F3E3C4"/><rect y="140" width="360" height="60" fill="#A9743F"/><rect x="40" y="100" width="280" height="64" rx="10" fill="#8E1F1F"/><rect x="48" y="106" width="264" height="52" rx="7" fill="#B23030"/>
+<ellipse cx="90" cy="130" rx="26" ry="16" fill="#fff"/><path d="M68 128 q22 -22 44 0Z" fill="#fffdf6"/><ellipse cx="160" cy="132" rx="24" ry="14" fill="#4D2E1B"/><ellipse cx="160" cy="130" rx="20" ry="10" fill="#C98E4F"/><path d="M200 126 q30 -22 62 0 q-30 20 -62 0Z" fill="#E56B5B"/><circle cx="280" cy="130" r="9" fill="#7a7a7a"/><circle cx="296" cy="136" r="6" fill="#9c9c9c"/><circle cx="130" cy="150" r="5" fill="#D7B941"/></svg>`,
+4:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Caja de recuerdos con el estuche del cordón umbilical"><rect width="360" height="200" fill="#EADFC7"/><rect y="150" width="360" height="50" fill="#C9A978"/><rect x="110" y="84" width="140" height="72" rx="6" fill="#8E3A2B"/><rect x="104" y="72" width="152" height="22" rx="5" fill="#B24B38"/><rect x="170" y="72" width="20" height="84" fill="#D9A441"/><circle cx="180" cy="116" r="9" fill="#F5E7B8"/></svg>`,
+5:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Niños de 3, 5 y 7 años con caramelos largos"><rect width="360" height="200" fill="#DDE5F2"/>${ground()}${toriiSvg(135,30,1.1)}${person(60,176,.7,'#E8A0B5')}${person(110,176,.85,'#6D7FB5')}${person(160,176,1,'#D9A441')}<g transform="rotate(-18 300 120)"><rect x="296" y="60" width="9" height="110" rx="4" fill="#F7C6D3"/><rect x="296" y="86" width="9" height="12" fill="#C8322C"/><rect x="296" y="116" width="9" height="12" fill="#C8322C"/></g><g transform="rotate(10 328 120)"><rect x="326" y="70" width="9" height="100" rx="4" fill="#fff"/><rect x="326" y="94" width="9" height="12" fill="#C8322C"/></g></svg>`,
+6:()=>`<svg viewBox="0 0 360 200" role="img" aria-label="Fotografía familiar frente a un torii"><rect width="360" height="200" fill="#DDE5F2"/>${ground()}<rect x="90" y="24" width="180" height="140" rx="6" fill="#fffdf8" stroke="#D9D2C1" stroke-width="4"/><rect x="100" y="34" width="160" height="104" fill="#C6D3E6"/><rect x="100" y="108" width="160" height="30" fill="#B8C5A8"/>${toriiSvg(150,50,.5)}${person(130,138,.55,'#2B3A67')}${person(215,138,.55,'#E8A0B5')}<circle cx="310" cy="46" r="14" fill="#F7E7A8"/></svg>`
+};
+const kidSvg=(age,dressed)=>{const a=AGES.find(x=>x.a===age);const h=age===3?40:age===5?50:60;
+  return `<svg viewBox="0 0 70 110" role="img" aria-label="Niño de ${age} años"><circle cx="35" cy="${110-h-18}" r="11" fill="#F1D0B5"/><path d="M24 ${110-h-20} a11 11 0 0 1 22 0 q-11 -6 -22 0Z" fill="#1d1d1d"/><path d="M12 108 L20 ${110-h} H50 L58 108Z" fill="${dressed?'#8E7AB5':'#cfc9bb'}"/>${dressed?`<rect x="18" y="${110-h+12}" width="34" height="${age===7?14:6}" fill="${a.c}"/>${age===5?'<path d="M16 100 h38 l4 8 h-46z" fill="#4A5A90"/>':''}${age===3?'<path d="M20 '+(110-h)+' h30 v16 h-30z" fill="#E8A0B5"/>':''}`:''}</svg>`};
+
+/* ---------- Arrastrar o tocar ---------- */
+function dragTo(el,target,onDrop){
+  let id=null,sx=0,sy=0,moved=false;
+  el.classList.add('drag');
+  el.addEventListener('pointerdown',e=>{id=e.pointerId;try{el.setPointerCapture(id)}catch(x){}sx=e.clientX;sy=e.clientY;moved=false;el.classList.add('dragging')});
+  el.addEventListener('pointermove',e=>{if(id===null)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>8)moved=true;if(moved)el.style.transform=`translate(${dx}px,${dy}px)`});
+  const end=e=>{if(id===null)return;id=null;el.classList.remove('dragging');
+    const r=target.getBoundingClientRect();const inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+    el.style.transform='';if(!moved||inside)onDrop(el)};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',()=>{id=null;el.classList.remove('dragging');el.style.transform=''});
+}
+const bad=el=>{el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')};
+
+/* ---------- Pantallas ---------- */
+const app=$('#app');
+function go(p){stopSpeak();Object.assign(S,p);render();window.scrollTo(0,0)}
+function bar(title,right,back){return `<header class="bar">${back?`<button class="back" data-back aria-label="Volver">‹</button>`:''}<h2 style="flex:1">${title}</h2>${right||''}</header>`}
+
+function render(){
+  if(S.screen==='cover')return cover();
+  if(S.screen==='map')return mapScreen();
+  if(S.screen==='station')return stationScreen();
+  if(S.screen==='close')return closeScreen();
+}
+
+function cover(){
+  app.innerHTML=`<main class="cover">
+  <svg class="torii" viewBox="0 0 120 110" aria-hidden="true"><g fill="var(--red)"><rect x="22" y="30" width="8" height="78"/><rect x="90" y="30" width="8" height="78"/><path d="M6 24 Q60 12 114 24 L118 12 Q60 -2 2 12Z"/><rect x="16" y="42" width="88" height="7"/></g></svg>
+  <div class="big" aria-hidden="true">道</div>
+  <h1>Michi</h1>
+  <p>El camino de la infancia japonesa. Seis estaciones, desde la espera del bebé hasta los 7 años.</p>
+  <p class="small">En cada una conoces un rito, superas un reto y lo comparas con las tradiciones de tu familia.</p>
+  <button class="btn primary" id="go">Comenzar el camino</button>
+  ${S.done.length?`<button class="btn ghost" id="reset">Empezar de nuevo</button>`:''}
+  </main>`;
+  $('#go').onclick=()=>go({screen:'map'});
+  const r=$('#reset');if(r)r.onclick=()=>{S.done=[];S.notes={};S.vote=null;save();render()};
+}
+
+function mapScreen(){
+  const n=S.done.length;
+  const rows=ST.map((s,i)=>{const lock=!unlocked(s.id),dn=S.done.includes(s.id);
+    const state=dn?'Completada':lock?'Bloqueada':'Disponible';
+    return `<button class="node ${i%2?'right':''} ${lock?'locked':dn?'done':'open'}" data-id="${s.id}" ${lock?'aria-disabled="true"':''}><span class="disc" aria-hidden="true">${s.k}<span class="num">${s.id}</span></span><span><span class="t" style="display:block">${s.name}</span><span class="s">${state}</span></span></button>`}).join('');
+  app.innerHTML=`${bar('Tu camino',`<span class="prog">Progreso ${n} / 6</span>`,true)}<main>
+  <div class="steps" aria-hidden="true">${ST.map(s=>`<i class="${S.done.includes(s.id)?'on':''}"></i>`).join('')}</div>
+  <div class="path" id="path">${rows}</div>
+  ${n===6?`<button class="btn primary" id="fin">Ver mis insignias y fuentes</button>`:`<p class="small" style="text-align:center;margin:0">Completa cada estación para abrir la siguiente.</p>`}
+  <button class="btn ghost" id="fuentes">Ver fuentes</button>
+  </main>`;
+  $('[data-back]').onclick=()=>go({screen:'cover'});
+  $$('.node').forEach(b=>b.onclick=()=>{const id=+b.dataset.id;if(!unlocked(id)){bad(b);return}go({screen:'station',st:id,step:0})});
+  const f=$('#fin');if(f)f.onclick=()=>go({screen:'close'});
+  $('#fuentes').onclick=()=>go({screen:'close'});
+  // sendero entre discos
+  requestAnimationFrame(()=>{const p=$('#path');if(!p)return;const ds=$$('.disc',p);const pr=p.getBoundingClientRect();
+    const pts=ds.map(d=>{const r=d.getBoundingClientRect();return[r.left-pr.left+r.width/2,r.top-pr.top+r.height/2]});
+    let seg='';for(let i=0;i<pts.length-1;i++){const[a,b]=[pts[i],pts[i+1]];const on=S.done.includes(i+1);
+      seg+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--sand)" stroke-width="16" stroke-linecap="round"/>${on?`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="var(--green)" stroke-width="6" stroke-linecap="round"/>`:''}`}
+    p.insertAdjacentHTML('afterbegin',`<svg class="trail" aria-hidden="true">${seg}</svg>`)});
+}
+
+function stationScreen(){
+  const s=ST[S.st-1];
+  app.innerHTML=`${bar(`Estación ${s.id} · ${s.name}`,`<span class="r" aria-hidden="true">${s.k}</span>`,true)}<main>
+  <div class="steps" aria-hidden="true">${['Relato','Reto','Compara'].map((_,i)=>`<i class="${i<=S.step?'on':''}"></i>`).join('')}</div>
+  <div id="body" style="display:flex;flex-direction:column;gap:16px"></div></main>`;
+  $('[data-back]').onclick=()=>go({screen:'map'});
+  [storyStep,retoStep,compareStep][S.step](s,$('#body'));
+}
+
+function storyStep(s,b){
+  b.innerHTML=`<div class="scene">${SCENE[s.id]()}</div>
+  <div class="chips">${s.chips.map((c,i)=>`<span class="chip ${i?'red':''}">${c}</span>`).join('')}</div>
+  <div class="title"><h1>${s.rites}</h1></div>
+  <p class="story">${s.text}</p>
+  <button class="listen" aria-pressed="false">▶ Escuchar el relato</button>
+  <div class="fuente">${s.sum}</div>
+  <button class="btn primary" id="next">Ir al reto ›</button>`;
+  $('.listen',b).onclick=e=>speak(s.text,e.currentTarget);
+  $('#next',b).onclick=()=>go({step:1});
+}
+
+function finishReto(b,msg){
+  const n=$('.fb',b);if(n){n.className='fb ok';n.textContent=msg}
+  const nx=$('#next',b);if(nx)nx.disabled=false;
+}
+function retoShell(s,inner,hint){
+  return `<div class="card"><span class="reto">RETO</span><h3>${s.retoTitle}</h3>${hint?`<p class="hint">${hint}</p>`:''}${inner}<p class="fb" role="status" aria-live="polite"></p></div>
+  <div class="fuente">${s.sum}</div>
+  <div class="row"><button class="btn ghost" id="prev">‹ Relato</button><button class="btn primary" id="next" disabled>Siguiente ›</button></div>`}
+
+function retoStep(s,b){
+  const R={1:reto1,2:reto2,3:reto3,4:reto4,5:reto5,6:reto6}[s.id];
+  R(s,b);
+  $('#prev',b).onclick=()=>go({step:0});
+  $('#next',b).onclick=()=>go({step:2});
+  if(S.done.includes(s.id)&&s.id!==6){/* permitir repasar sin bloquear */$('#next',b).disabled=false}
+  if(S.done.includes(s.id)&&s.id===6)$('#next',b).disabled=false;
+}
+
+function reto1(s,b){
+  b.innerHTML=retoShell(s,`<div class="stage1"><div class="belly" id="belly">vientre</div><div class="obi" id="obi">iwata-obi</div></div><div id="q" hidden><p style="margin:0;font-weight:700">¿Por qué en un día del perro?</p><div class="opts" style="margin-top:8px"><button class="opt" data-ok="1">Partos fáciles</button><button class="opt">Es feriado</button></div></div>`,'Arrastra la faja hasta el vientre, o tócala.');
+  const belly=$('#belly',b);
+  dragTo($('#obi',b),belly,el=>{el.hidden=true;belly.classList.add('full');belly.textContent='faja puesta ✓';$('#q',b).hidden=false;$('.fb',b).textContent='Ahora responde la pregunta.'});
+  $$('#q .opt',b).forEach(o=>o.onclick=()=>{if(o.dataset.ok){o.classList.add('good');finishReto(b,'Correcto. El perro se asocia a partos fáciles. Es una creencia popular (Nivel C).')}else{o.classList.add('bad');bad(o);$('.fb',b).className='fb no';$('.fb',b).textContent='Casi. Piensa en lo que se desea para el parto.'}});
+}
+function reto2(s,b){
+  const order=[3,1,0,2];
+  b.innerHTML=retoShell(s,`<div class="ord" id="ord">${order.map(i=>`<button data-i="${i}"><span class="n">·</span><span>${SEQ[i]}</span></button>`).join('')}</div>`,'Toca los ritos en el orden en que ocurren.');
+  let next=0;
+  $$('#ord button',b).forEach(btn=>btn.onclick=()=>{if(btn.classList.contains('got'))return;
+    if(+btn.dataset.i===next){next++;btn.classList.add('got');$('.n',btn).textContent=next;$('.fb',b).className='fb';$('.fb',b).textContent='';if(next===SEQ.length)finishReto(b,'Secuencia completa. El nombre llega antes que la visita al santuario.')}
+    else{bad(btn);$('.fb',b).className='fb no';$('.fb',b).textContent='Ese todavía no. ¿Qué ocurre primero?'}});
+}
+function reto3(s,b){
+  const items=[...TRAY_OK,...TRAY_BAD].sort((a,c)=>a.length*7%5-c.length*7%5);
+  b.innerHTML=retoShell(s,`<div class="zone" id="tray"><div class="tray" id="placed">Bandeja vacía</div></div><div class="opts" id="pool">${items.map(t=>`<button class="opt" data-t="${t}">${t}</button>`).join('')}</div>`,'Arrastra a la bandeja lo que forma parte del banquete, o tócalo.');
+  const tray=$('#tray',b);let n=0;
+  $$('#pool .opt',b).forEach(o=>dragTo(o,tray,el=>{const t=el.dataset.t;
+    if(TRAY_OK.includes(t)){el.classList.add('placed');if(!n)$('#placed',b).textContent='';n++;$('#placed',b).insertAdjacentHTML('beforeend',`<span class="it">${t}</span>`);
+      if(t==='Piedra pequeña')$('.fb',b).textContent='La piedra se asocia a dientes fuertes. Es una interpretación por contrastar (Nivel C).';
+      if(n===TRAY_OK.length){tray.classList.add('full');finishReto(b,'Bandeja lista. El menú exacto varía según la región y la familia.')}}
+    else{bad(el);$('.fb',b).className='fb no';$('.fb',b).textContent=`${t} no forma parte del banquete tradicional.`}}));
+}
+function reto4(s,b){
+  b.innerHTML=retoShell(s,`<button class="boxbtn" id="box" aria-label="Abrir la caja"><svg viewBox="0 0 220 150"><rect x="30" y="64" width="160" height="78" rx="8" fill="#8E3A2B"/><g id="lid"><rect x="20" y="42" width="180" height="28" rx="6" fill="#B24B38"/><rect x="100" y="42" width="20" height="100" fill="#D9A441"/></g></svg></button><div id="open" hidden><div class="note">Dentro hay un estuche pequeño con el cordón umbilical, guardado como recuerdo.</div><p style="margin:12px 0 8px;font-weight:700">¿Se documentó en Japón un rito igual a la ombligada andina?</p><div class="opts"><button class="opt" data-ok="1">No se documentó</button><button class="opt">Sí, es idéntico</button></div></div>`,'Toca la caja para abrirla.');
+  $('#box',b).onclick=()=>{$('#lid',b).setAttribute('transform','translate(-34 -34) rotate(-28 20 60)');$('#open',b).hidden=false;$('#box',b).onclick=null;$('.fb',b).textContent=''};
+  $$('#open .opt',b).forEach(o=>o.onclick=()=>{if(o.dataset.ok){o.classList.add('good');finishReto(b,'Correcto. Aquí se muestra lo que no está documentado, sin inventar un equivalente.')}else{o.classList.add('bad');bad(o);$('.fb',b).className='fb no';$('.fb',b).textContent='No hay una fuente que lo confirme. Prueba otra vez.'}});
+}
+function reto5(s,b){
+  let sel=null;const dressed=new Set();
+  b.innerHTML=retoShell(s,`<div class="kids" id="kids"></div><div class="opts" id="gar">${AGES.slice().reverse().map(a=>`<button class="opt" data-a="${a.a}">${a.g}<span class="small" style="display:block;font-weight:400">${a.d}</span></button>`).join('')}</div>`,'Toca un niño y luego la prenda que le corresponde.');
+  const draw=()=>{$('#kids',b).innerHTML=AGES.map(a=>`<button class="kid ${sel===a.a?'sel':''} ${dressed.has(a.a)?'done':''}" data-a="${a.a}">${kidSvg(a.a,dressed.has(a.a))}${a.a} años</button>`).join('');
+    $$('.kid',b).forEach(k=>k.onclick=()=>{sel=+k.dataset.a;draw()})};
+  draw();
+  $$('#gar .opt',b).forEach(o=>o.onclick=()=>{if(sel===null){$('.fb',b).className='fb no';$('.fb',b).textContent='Primero toca un niño.';return}
+    if(+o.dataset.a===sel){dressed.add(sel);o.classList.add('placed');sel=null;draw();$('.fb',b).className='fb';$('.fb',b).textContent='';if(dressed.size===3)finishReto(b,'Los tres están listos. Hoy la ropa es más flexible y cambia según la familia.')}
+    else{bad(o);$('.fb',b).className='fb no';$('.fb',b).textContent='Esa prenda es para otra edad.'}});
+}
+function reto6(s,b){
+  b.innerHTML=retoShell(s,`<div class="opts" id="v">${VOTES.map(v=>`<button class="opt ${S.vote===v?'sel':''}" data-v="${v}" aria-pressed="${S.vote===v}">${v}</button>`).join('')}</div>`,'Elige una opción. Tu voto se guarda en este dispositivo.');
+  const set=()=>{$$('#v .opt',b).forEach(o=>{const on=S.vote===o.dataset.v;o.classList.toggle('sel',on);o.setAttribute('aria-pressed',on)})};
+  $$('#v .opt',b).forEach(o=>o.onclick=()=>{S.vote=o.dataset.v;save();set();finishReto(b,`Registraste: ${S.vote}. Puedes cambiarlo cuando quieras.`)});
+  if(S.vote){set();finishReto(b,`Registraste: ${S.vote}.`)}
+}
+
+function compareStep(s,b){
+  const v=S.notes[s.id]||'';
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  b.innerHTML=`<div class="title"><h1>Compara con tu cultura</h1></div>
+  <div class="cmp"><div class="col jp"><b>Japón</b>${s.compareJp}</div></div>
+  <label for="note" style="font-weight:700">${s.compare}</label>
+  <textarea id="note" placeholder="Escribe aquí tu tradición…">${esc(v)}</textarea>
+  ${SR?`<button class="mic" id="mic">🎤 Dictar con la voz</button>`:''}
+  <p class="small" style="margin:0">Puedes dejarlo en blanco. Lo escrito se guarda solo en este dispositivo.</p>
+  <div class="row"><button class="btn ghost" id="prev">‹ Reto</button><button class="btn primary" id="fin">${s.id===6?'Terminar camino':'Guardar y seguir'}</button></div>`;
+  $('#prev',b).onclick=()=>go({step:1});
+  let rec=null;
+  if(SR){$('#mic',b).onclick=e=>{const m=e.currentTarget;
+    if(rec){rec.stop();return}
+    try{rec=new SR();rec.lang='es-ES';rec.interimResults=false;
+      rec.onresult=ev=>{const t=ev.results[0][0].transcript;const n=$('#note',b);n.value=(n.value?n.value+' ':'')+t};
+      rec.onend=()=>{rec=null;m.classList.remove('on');m.textContent='🎤 Dictar con la voz'};
+      rec.onerror=()=>{rec=null;m.classList.remove('on');m.textContent='🎤 Dictar con la voz'};
+      m.classList.add('on');m.textContent='■ Escuchando… toca para parar';rec.start()}catch(x){rec=null}}}
+  $('#fin',b).onclick=()=>{try{rec&&rec.stop()}catch(x){}
+    S.notes[s.id]=$('#note',b).value.trim();if(!S.done.includes(s.id))S.done.push(s.id);save();
+    if(s.id===6)go({screen:'close'});else go({screen:'map'})};
+}
+
+function closeScreen(){
+  const n=S.done.length;
+  app.innerHTML=`${bar(n===6?'Llegaste al final':'Insignias y fuentes','',true)}<main>
+  ${n===6?`<div class="title"><h1>Recorriste el camino de 道</h1></div><p class="story">Conociste seis momentos de la infancia japonesa y los comparaste con tu propia familia. Estas prácticas no se reemplazan: se explican para poder conocerlas y transmitirlas.</p>`:`<p class="story">Completa las seis estaciones para ganar todas las insignias.</p>`}
+  <div class="badges">${ST.map(s=>`<div class="badge ${S.done.includes(s.id)?'':'off'}"><span class="d" aria-hidden="true">${s.k}</span>${s.name}</div>`).join('')}</div>
+  ${Object.values(S.notes).some(Boolean)?`<details open><summary>Tus comparaciones</summary><ul class="claims">${ST.filter(s=>S.notes[s.id]).map(s=>`<li><b>${s.name}:</b> ${esc(S.notes[s.id])}</li>`).join('')}</ul></details>`:''}
+  <h2 style="font-size:1.3rem">Fuentes y verificación</h2>
+  <div class="legend"><span><span class="lvl B">Nivel B</span>Fuente publicada, documentada.</span><span><span class="lvl C">Nivel C</span>Creencia o interpretación, por contrastar.</span><span><span class="lvl N">No documentado</span>No se encontró fuente.</span></div>
+  ${ST.map(s=>`<details><summary>${s.id} · ${s.rites}</summary><ul class="claims">${s.claims.map(c=>`<li><span class="lvl ${c[0]}">${c[0]==='N'?'No documentado':'Nivel '+c[0]}</span>${c[1]}</li>`).join('')}</ul></details>`).join('')}
+  <button class="btn primary" id="map">Volver al camino</button>
+  </main>`;
+  $('[data-back]').onclick=()=>go({screen:'map'});$('#map').onclick=()=>go({screen:'map'});
+}
+render();
+</script>
+
+</body>
+</html>
